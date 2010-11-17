@@ -1,21 +1,31 @@
+# User as which to perform the deploy. Used to setup permissions appropriately and to clone from github.
 AS_USER = 'www-data'
-ROOT_PATH = '/var/praekelt/mobiletv'
-BUILDOUT_REPO = 'git@github.com:praekelt/buildouts.git'
-REPO_BRANCH = 'mobiletv-sa'
+
+# Root path in which to perform the deploy. qa/production/current/release structure will be created within this path.
+ROOT_PATH = '/var/praekelt/project_name'
+
+# Buildout repo with which to perform the deploy.
+BUILDOUT_REPO = 'git@github.com:praekelt/something.git'
+
+# Buildout repo branch with which to perform the deploy.
+REPO_BRANCH = 'master'
+
+# Resources to copy accross from the current release to the new releaseon each deploy.
 SHARED_RESOURCES = [
     'downloads', 
     'eggs', 
     'log',
-    'production_main_media/content_images', 
-    'production_main_media/ingesting_clip_resources', 
-    'production_main_media/photologue', 
-    'qa_media/content_images', 
-    'qa_media/ingesting_clip_resources', 
-    'qa_media/photologue',
+    'media', 
 ]
 
-PRODUCTION_HOST = 'plusshaun@localhost'
-PRODUCTION_FCGI_CONTROL_SCRIPT = 'mobiletv_production_main.fcgi'
+# Production hostname on which to perform production deploys.
+PRODUCTION_HOST = 'localhost'
 
+# Production FCGI control script name.
+PRODUCTION_FCGI_CONTROL_SCRIPT = 'project_name_main.fcgi'
+
+# QA hostname on which to perform qa deploys.
 QA_HOST = 'localhost'
-QA_FCGI_CONTROL_SCRIPT = 'mobiletv_qa.fcgi'
+
+# QA FCGI control script name.
+QA_FCGI_CONTROL_SCRIPT = 'project_name_qa.fcgi'
