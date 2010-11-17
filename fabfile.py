@@ -26,6 +26,9 @@ def _run_buildout(new_release_path):
         sudo('./bin/buildout -v', user=deploy_conf.AS_USER)
 
 def _copy_shared_resources(current_release_path, new_release_path):
+    if not current_release_path:
+        return None
+
     for shared_resource in deploy_conf.SHARED_RESOURCES:
         path = os.path.join(current_release_path, shared_resource)
         with cd(new_release_path):
@@ -33,12 +36,22 @@ def _copy_shared_resources(current_release_path, new_release_path):
             if dir_path != '':
                 sudo('mkdir -p %s' % dir_path, user=deploy_conf.AS_USER)
             with settings(warn_only=True):
-                sudo('cp -r %s %s' % (path, shared_resource), user=deploy_conf.AS_USER)
+                if dir_path != '':
+                    sudo('cp -r %s %s' % (path, shared_resource), user=deploy_conf.AS_USER)
+                else:
+                    sudo('cp -r %s .' % path, user=deploy_conf.AS_USER)
 
 def _get_current_release_path(path):
     with cd(path):
-        output = sudo('ls -l current', user=deploy_conf.AS_USER)
-    return output.split('-> ')[-1]
+        with settings(warn_only=True):
+            result = sudo('ls -l current', user=deploy_conf.AS_USER)
+            if result.failed:
+                if confirm('It looks like there is no current release. This means no shared resources can be copied to this new release. Continue anyway?'):
+                    return None
+                else:
+                    abort("No current release found. Aborting at user request.")
+            else:
+                return result.split('-> ')[-1]
 
 def _deploy(deploy_type):
     """
