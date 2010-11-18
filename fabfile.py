@@ -37,7 +37,7 @@ def _copy_shared_resources(current_release_path, new_release_path):
                 sudo('mkdir -p %s' % dir_path, user=deploy_conf.AS_USER)
             with settings(warn_only=True):
                 if dir_path != '':
-                    sudo('cp -r %s %s' % (path, shared_resource), user=deploy_conf.AS_USER)
+                    sudo('cp -r %s %s' % (path, dir_path), user=deploy_conf.AS_USER)
                 else:
                     sudo('cp -r %s .' % path, user=deploy_conf.AS_USER)
 
