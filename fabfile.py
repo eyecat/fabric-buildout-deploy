@@ -15,15 +15,20 @@ from fabric.contrib.console import confirm
 import deploy_conf
 
 def _clone_buildout(release_path, timestamp):
+    """
+    Clone buildout switch to branch and return HEAD rev hash.
+    """
     with cd(release_path):
         sudo('git clone %s %s' % (deploy_conf.BUILDOUT_REPO, timestamp), user=deploy_conf.AS_USER)
         with cd(timestamp):
             sudo('git checkout -b %s origin/%s' % (deploy_conf.REPO_BRANCH, deploy_conf.REPO_BRANCH), user=deploy_conf.AS_USER)
+            return sudo('git rev-parse HEAD', user=deploy_conf.AS_USER)
 
-def _run_buildout(new_release_path):
+def _run_buildout(new_release_path, deploy_type):
     with cd(new_release_path):
-        sudo('python2.6 bootstrap.py', user=deploy_conf.AS_USER)
-        sudo('./bin/buildout -v', user=deploy_conf.AS_USER)
+        conf_file = '%s.cfg' % ('qa' if deploy_type == 'QA' else 'buildout')
+        sudo('python2.6 bootstrap.py -c %s' % conf_file, user=deploy_conf.AS_USER)
+        sudo('./bin/buildout -v -c %s' % conf_file, user=deploy_conf.AS_USER)
 
 def _copy_shared_resources(current_release_path, new_release_path):
     if not current_release_path:
@@ -46,13 +51,19 @@ def _get_current_release_path(path):
         with settings(warn_only=True):
             result = sudo('ls -l current', user=deploy_conf.AS_USER)
             if result.failed:
-                if confirm('It looks like there is no current release. This means no shared resources can be copied to this new release. Continue anyway?'):
-                    return None
-                else:
-                    abort("No current release found. Aborting at user request.")
+                return None
             else:
                 return result.split('-> ')[-1]
-
+                
+def _qa_rev_match(rev, path):
+    with settings(host_string=deploy_conf.QA_HOST, warn_only=True):
+        qa_current_release_path = _get_current_release_path(path)
+        if not qa_current_release_path:
+            return False
+        with cd(qa_current_release_path):
+            qa_rev = sudo('git rev-parse HEAD', user=deploy_conf.AS_USER)
+            return qa_rev == rev
+        
 def _deploy(deploy_type):
     """
     Deploys a Buildout based on provided deploy_conf.py.
@@ -83,17 +94,28 @@ def _deploy(deploy_type):
             deploy_type,
         )):
 
+        # Confirm continue when no previous release is found.
+        if not current_release_path:        
+            if not confirm('It looks like there is no current release. This means no shared resources can be copied to this new release. Continue anyway?'):
+                abort("No current release found. Aborting at user request.")
+
         # Create release path. 
         sudo('mkdir -p %s' % release_path, user=deploy_conf.AS_USER)
 
         # Clone buildout.
-        _clone_buildout(release_path, release_timestamp)
+        rev = _clone_buildout(release_path, release_timestamp)
+
+        # If this is a production release confirm continue if the current rev has not been released to QA.
+        if deploy_type == 'PRODUCTION':
+            if not _qa_rev_match(rev, path):
+                if not confirm('It looks like the current rev has not been released to QA yet. Are you trying to sneak untested code through to production? Shame on you! Continue anyway?'):
+                    abort("No rev found for current release on QA. Aborting at user request.")
 
         # Copy shared resources.
         _copy_shared_resources(current_release_path, new_release_path)
 
         # Run buildout.
-        _run_buildout(new_release_path)
+        _run_buildout(new_release_path, deploy_type)
     
         # Stop Nginx and old FCGI processes.
         sudo('/etc/init.d/nginx stop')
