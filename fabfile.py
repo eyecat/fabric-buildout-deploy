@@ -26,8 +26,8 @@ def _clone_buildout(release_path, timestamp):
 
 def _run_buildout(new_release_path, deploy_type):
     with cd(new_release_path):
-        conf_file = '%s.cfg' % ('qa' if deploy_type == 'QA' else 'buildout')
-        sudo('python2.6 bootstrap.py -c %s' % conf_file, user=deploy_conf.AS_USER)
+        conf_file = '%s.cfg' % deploy_type.lower()
+        sudo('%s bootstrap.py -c %s' % (deploy_conf.PYTHON_EXEC, conf_file), user=deploy_conf.AS_USER)
         sudo('./bin/buildout -v -c %s' % conf_file, user=deploy_conf.AS_USER)
 
 def _copy_shared_resources(current_release_path, new_release_path):
@@ -55,7 +55,8 @@ def _get_current_release_path(path):
             else:
                 return result.split('-> ')[-1]
                 
-def _qa_rev_match(rev, path):
+def _qa_rev_match(rev):
+    path = os.path.join(deploy_conf.ROOT_PATH, 'qa')
     with settings(host_string=deploy_conf.QA_HOST, warn_only=True):
         qa_current_release_path = _get_current_release_path(path)
         if not qa_current_release_path:
@@ -107,7 +108,7 @@ def _deploy(deploy_type):
 
         # If this is a production release confirm continue if the current rev has not been released to QA.
         if deploy_type == 'PRODUCTION':
-            if not _qa_rev_match(rev, path):
+            if not _qa_rev_match(rev):
                 if not confirm('It looks like the current rev has not been released to QA yet. Are you trying to sneak untested code through to production? Shame on you! Continue anyway?'):
                     abort("No rev found for current release on QA. Aborting at user request.")
 
