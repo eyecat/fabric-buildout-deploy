@@ -119,6 +119,12 @@ def _deploy(deploy_type):
         # Copy shared resources.
         _copy_shared_resources(current_release_path, new_release_path)
 
+        # Create directories for nginx log files.
+        nginx_log_domains = getattr(deploy_conf, '%s_NGINX_LOG_DOMAINS' % deploy_type, False)
+        if nginx_log_domains:
+            for log_path in nginx_log_domains:
+                sudo('mkdir -p %s/log/nginx/%s' % (new_release_path, log_path), user=deploy_conf.AS_USER)
+
         # Run buildout.
         _run_buildout(new_release_path, deploy_type)
     
