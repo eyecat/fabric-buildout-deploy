@@ -21,7 +21,11 @@ def _clone_buildout(release_path, timestamp):
     with cd(release_path):
         sudo('git clone %s %s' % (deploy_conf.BUILDOUT_REPO, timestamp), user=deploy_conf.AS_USER)
         with cd(timestamp):
-            sudo('git checkout -b %s origin/%s' % (deploy_conf.REPO_BRANCH, deploy_conf.REPO_BRANCH), user=deploy_conf.AS_USER)
+            # Only switch to a branch if needed
+            if hasattr(deploy_conf, 'REPO_BRANCH') \
+                and deploy_conf.REPO_BRANCH \
+                and deploy_conf.REPO_BRANCH != 'master':
+                sudo('git checkout -b %s origin/%s' % (deploy_conf.REPO_BRANCH, deploy_conf.REPO_BRANCH), user=deploy_conf.AS_USER)
             return sudo('git rev-parse HEAD', user=deploy_conf.AS_USER)
 
 def _run_buildout(new_release_path, deploy_type):
