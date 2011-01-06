@@ -78,9 +78,9 @@ def _deploy(deploy_type):
         * Clone Buildout specified in BUILDOUT_REPO and switch to branch specified in REPO_BRANCH.
         * Copy shared resources specified in SHARED_RESOURCES from current release to new release path.
         * Run the Buildout.
-        * Stop Nginx and old FCGI processes.
+        * Stop Nginx and Supervisor processes.
         * Update current symlink to point to new release.
-        * Start Nginx and new FCGI processes.
+        * Start Nginx and Supervisor processes.
     """
     release_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     
@@ -128,21 +128,24 @@ def _deploy(deploy_type):
         # Run buildout.
         _run_buildout(new_release_path, deploy_type)
     
-        # Stop Nginx and old FCGI processes.
+        # Stop Nginx and Supervisor processes.
         sudo('/etc/init.d/nginx stop')
         with settings(warn_only=True):
-            sudo('/etc/init.d/%s stop' % getattr(deploy_conf, '%s_FCGI_CONTROL_SCRIPT' % deploy_type))
+            for  program in getattr(deploy_conf, '%s_SUPERVISOR_PROGRAMS' % deploy_type):
+                sudo('supervisorctl stop %s' % program)
 
         # Set current to new release.
         with cd(path):
             with settings(warn_only=True):
                 sudo('rm current')
             sudo('ln -s %s current' % new_release_path)
+        
+        # Update Supervisor
+        sudo('supervisorctl update')
     
-        # Start Nginx and new FCGI processes.
+        # Start Nginx and Supervisor processes.
         with settings(warn_only=True):
-            sudo('/etc/init.d/%s start' % getattr(deploy_conf, '%s_FCGI_CONTROL_SCRIPT' % deploy_type))
-        sudo('/etc/init.d/nginx start')
+            sudo('/etc/init.d/nginx start')
 
 @hosts(deploy_conf.PRODUCTION_HOST)
 def deploy_production():

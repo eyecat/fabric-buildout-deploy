@@ -24,19 +24,15 @@ SHARED_RESOURCES = [
 # Production hostname on which to perform production deploys.
 PRODUCTION_HOST = 'localhost'
 
-# Production FCGI control script name.
-PRODUCTION_FCGI_CONTROL_SCRIPT = 'project_name_main.fcgi'
-
-# Production Domains for creation of nginx log files.
-# Example:
-# PRODUCTION_NGINX_LOG_DOMAINS = ['www.example.com', 'staging.example.com']
-PRODUCTION_NGINX_LOG_DOMAINS = []
+# Production supervisor program names to restart.
+PRODUCTION_SUPERVISOR_PROGRAMS = [
+    'production.fcgi',
+]
 
 # QA hostname on which to perform qa deploys.
 QA_HOST = 'localhost'
 
-# QA FCGI control script name.
-QA_FCGI_CONTROL_SCRIPT = 'project_name_qa.fcgi'
-
-# QA Domains for creation of nginx log files.
-QA_NGINX_LOG_DOMAINS = []
+# QA supervisor program names to restart.
+QA_SUPERVISOR_PROGRAMS = [
+    'qa.fcgi',
+]
