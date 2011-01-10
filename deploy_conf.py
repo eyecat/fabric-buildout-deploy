@@ -13,6 +13,9 @@ BUILDOUT_REPO = 'git@github.com:praekelt/something.git'
 # Buildout repo branch with which to perform the deploy.
 REPO_BRANCH = 'master'
 
+# Path on host to key to use when cloning the repo.
+DEPLOY_KEY_PATH = '/var/www/.ssh/some_key'
+
 # Resources to copy accross from the current release to the new releaseon each deploy.
 SHARED_RESOURCES = [
     'downloads', 

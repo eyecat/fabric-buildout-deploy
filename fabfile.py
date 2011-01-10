@@ -19,7 +19,10 @@ def _clone_buildout(release_path, timestamp):
     Clone buildout switch to branch and return HEAD rev hash.
     """
     with cd(release_path):
-        sudo('git clone %s %s' % (deploy_conf.BUILDOUT_REPO, timestamp), user=deploy_conf.AS_USER)
+        if getattr(deploy_conf, 'DEPLOY_KEY_PATH', False):
+            sudo("ssh-agent sh -c 'ssh-add %s && git clone %s %s'" % (deploy_conf.DEPLOY_KEY_PATH, deploy_conf.BUILDOUT_REPO, timestamp), user=deploy_conf.AS_USER)
+        else:
+            sudo("git clone %s %s" % (deploy_conf.BUILDOUT_REPO, timestamp), user=deploy_conf.AS_USER)
         with cd(timestamp):
             # Only switch to a branch if needed
             if hasattr(deploy_conf, 'REPO_BRANCH') \
